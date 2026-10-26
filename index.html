@@ -34,7 +34,8 @@ footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 <script src="./config.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const DECKS=['Trains','Sky Striker','Branded','Branded/Dracotail','Blue-Eyes','Blue-Eyes/Dracotail','Blitzclique','Sacred Beast','Blitzclique/Ryzel','Lunalight','Orcust','VS/K9'];
+const DEFAULT_DECKS=['Trains','Sky Striker','Branded','Branded/Dracotail','Blue-Eyes','Blue-Eyes/Dracotail','Blitzclique','Sacred Beast','Blitzclique/Ryzel','Lunalight','Orcust','VS/K9'];
+let DECKS=sortDecks(DEFAULT_DECKS),deckTableAvailable=false;
 const configured=window.DUEL_ARENA_CONFIG&&window.DUEL_ARENA_CONFIG.url&&!window.DUEL_ARENA_CONFIG.url.includes('VOTRE-PROJET')&&window.DUEL_ARENA_CONFIG.anonKey&&!window.DUEL_ARENA_CONFIG.anonKey.includes('VOTRE-CLE');
 let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null,selectedMetaDeck=null,selectedDuelist=null;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
