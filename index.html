@@ -37,7 +37,7 @@ dialog{width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 48px);backgro
 <section class="page" id="lp"><div class="panel" id="lpSetup"><h2>❤️ Compteur de LP</h2><p class="hint">Un seul téléphone pour les deux joueurs. Pendant le duel, l’écran reste allumé sans toucher aux réglages du téléphone.</p><div class="grid"><div class="field"><label for="lpP1">Joueur 1</label><select id="lpP1"></select></div><div class="field"><label for="lpP2">Joueur 2</label><select id="lpP2"></select></div></div><div class="actions"><button class="primary" type="button" id="lpStart">⚔️ Démarrer le duel</button></div></div><div id="lpBoard" hidden></div></section>
 <section class="page" id="history"><div class="panel"><h2>📜 Historique des duels</h2><div id="historyTable"></div></div></section>
 <section class="page" id="decks"><div class="panel"><h2>🃏 Liste des decks disponibles</h2><p class="hint">Les decks sont partagés avec tous les visiteurs et apparaissent dans les listes déroulantes lors de la saisie d’un duel.</p><form id="addDeckForm"><div class="grid"><div class="field"><label for="newDeckName">Nom du deck</label><input id="newDeckName" maxlength="60" placeholder="Ex. Sky Striker" required></div></div><div class="actions"><button class="primary" type="submit">＋ Ajouter un deck</button></div></form><p id="deckListNotice" class="hint"></p><div id="deckList"></div></div></section>
-<section class="page" id="seasons"><div class="panel"><h2>📅 Saisons</h2><p class="hint">Une saison commence à sa date de début et se termine la veille de la saison suivante (par exemple à chaque nouvelle banlist). Les saisons sont partagées avec tous les visiteurs et servent de filtre dans Meta Stats et Duelist Overview.</p><form id="addSeasonForm"><div class="grid"><div class="field"><label for="newSeasonName">Nom de la saison</label><input id="newSeasonName" maxlength="40" placeholder="Ex. Banlist d’octobre" required></div><div class="field"><label for="newSeasonStart">Date de début</label><input id="newSeasonStart" type="date" required></div></div><div class="actions"><button class="primary" type="submit">＋ Ajouter une saison</button></div></form><p id="seasonListNotice" class="hint"></p><div id="seasonList"></div></div></section>
+<section class="page" id="seasons"><div class="panel"><h2>📅 Saisons</h2><p class="hint">Une saison commence à sa date de début et se termine la veille de la saison suivante (par exemple à chaque nouvelle banlist). Les saisons sont partagées avec tous les visiteurs et servent de filtre dans Meta Stats et Duelist Overview.</p><form id="addSeasonForm"><div class="grid"><div class="field"><label for="newSeasonName">Nom de la saison</label><input id="newSeasonName" maxlength="40" placeholder="Ex. Banlist d’octobre" required></div><div class="field"><label for="newSeasonStart">Date de début</label><input id="newSeasonStart" type="date" required></div></div><div class="actions"><button class="primary" type="submit">＋ Ajouter une saison</button></div></form><p id="seasonListNotice" class="hint"></p><div id="seasonList"></div></div><div class="panel"><div class="section-head"><h2>🏁 Récap de saison</h2><div class="field" style="min-width:220px"><select id="recapSeason" aria-label="Saison du récap"></select></div></div><div id="seasonRecap"></div></div></section>
 <section class="page" id="settings"><div class="panel"><h2>⚙️ Gestion des joueurs</h2><p class="hint">Les noms sont partagés avec tous les visiteurs.</p><form id="playersForm"><div class="grid" id="playerInputs"></div><div class="actions"><button class="primary" type="submit">Enregistrer les noms</button></div></form><hr style="border:0;border-top:1px solid #303d5f;margin:22px 0"><h2>＋ Ajouter un joueur</h2><form id="addPlayerForm"><div class="grid"><div class="field"><label for="newPlayerName">Nom du joueur</label><input id="newPlayerName" maxlength="35" placeholder="Ex. Alex" required></div></div><div class="actions"><button class="primary" type="submit">Ajouter le joueur</button></div></form></div></section>
 </main><dialog id="deckDialog"><div style="padding:18px"><div class="section-head"><h2 id="deckDialogTitle" style="margin:0"></h2><div><button class="small" id="copyYdke">Copier le YDKE</button> <button class="small" onclick="$('deckDialog').close()">Fermer</button></div></div><div id="deckDialogBody"></div></div></dialog><footer>DUEL ARENA · Ligue entre amis · Synchronisé avec Supabase</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -48,7 +48,7 @@ const DEFAULT_DECKS=['Trains','Sky Striker','Branded','Branded/Dracotail','Blue-
 let DECKS=sortDecks(DEFAULT_DECKS),deckTableAvailable=false;
 const configured=window.DUEL_ARENA_CONFIG&&window.DUEL_ARENA_CONFIG.url&&!window.DUEL_ARENA_CONFIG.url.includes('VOTRE-PROJET')&&window.DUEL_ARENA_CONFIG.anonKey&&!window.DUEL_ARENA_CONFIG.anonKey.includes('VOTRE-CLE');
 let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null,selectedMetaDeck=null,selectedMatchup=null,selectedDuelist=null;
-let seasons=[],seasonTableAvailable=false,period='all',scopedDuels=[];
+let seasons=[],seasonTableAvailable=false,period='all',scopedDuels=[],recapSeason=null;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr')}
 function sortDecks(list){return [...list].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}))}
@@ -72,7 +72,7 @@ function setStatus(message,kind=''){ $('connection').textContent=message;$('conn
 function render(){
  if(period!=='all'&&!['d30','d90'].includes(period)&&!seasons.some(s=>'s'+s.id===period))period='all';
  scopedDuels=duels.filter(d=>inRange(d,periodRange()));
- renderPeriod();renderSeasonList();
+ renderPeriod();renderSeasonList();renderSeasonRecap();
  const ss=stats();
  renderDeckList();
  renderMetaStats();renderMatchups();renderElo();renderDuelists();renderCardPage();
@@ -88,9 +88,9 @@ function render(){
 }
 function duelTable(list,actions){return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Vainqueur</th><th>Deck gagnant</th><th>Perdant</th><th>Deck perdant</th><th>1er joueur</th>${actions?'<th>Actions</th>':''}</tr></thead><tbody>${list.map(d=>`<tr><td>${esc(d.duel_date)}</td><td class="result-win">🏆 ${esc(pname(d.winner_id))}</td><td>${deckCell(d,'winner')}</td><td class="result-loss">${esc(pname(d.loser_id))}</td><td>${deckCell(d,'loser')}</td><td>${d.winner_went_first==null?'—':esc(pname(d.winner_went_first?d.winner_id:d.loser_id))}</td>${actions?`<td><button class="small" onclick="editDuel(${d.id})">Modifier</button> <button class="small danger" onclick="deleteDuel(${d.id})">Supprimer</button></td>`:''}</tr>${d.note?`<tr><td colspan="${actions?7:6}" style="color:var(--muted);padding-top:0">↳ ${esc(d.note)}</td></tr>`:''}`).join('')}</tbody></table></div>`}
 
-function deckRows(){
+function deckRows(list=scopedDuels){
  const rows=[];
- scopedDuels.forEach(d=>[[d.winner_deck,true],[d.loser_deck,false]].forEach(([deck,won])=>{
+ list.forEach(d=>[[d.winner_deck,true],[d.loser_deck,false]].forEach(([deck,won])=>{
   const key=norm(deck);let r=rows.find(x=>norm(x.deck)===key);
   if(!r)rows.push(r={deck:String(deck||'').trim(),played:0,wins:0,losses:0,first:{played:0,wins:0},second:{played:0,wins:0}});
   r.played++;if(won)r.wins++;else r.losses++;
@@ -131,9 +131,9 @@ window.showMatchupHistory=(a,b)=>{
 };
 window.clearMatchupSelection=()=>{selectedMatchup=null;$('matchupHistoryPanel').hidden=true};
 const ELO_START=1000,ELO_K=32;
-function eloRatings(){
+function eloRatings(list=scopedDuels){
  const ratings={},last={},history=[];players.forEach(p=>ratings[p.id]=ELO_START);
- [...scopedDuels].sort((a,b)=>a.duel_date.localeCompare(b.duel_date)||a.id-b.id).forEach(d=>{
+ [...list].sort((a,b)=>a.duel_date.localeCompare(b.duel_date)||a.id-b.id).forEach(d=>{
   const w=ratings[d.winner_id]??ELO_START,l=ratings[d.loser_id]??ELO_START;
   // Le gain dépend de la probabilité de victoire attendue : battre un joueur mieux classé rapporte plus.
   const delta=Math.round(ELO_K*(1-1/(1+10**((l-w)/400))));
@@ -217,6 +217,38 @@ function renderPeriod(){
  $('periodHint').textContent=`${scopedDuels.length} duel${scopedDuels.length>1?'s':''} sur ${duels.length} · s’applique à Meta Stats, Duelist Overview et Stats cartes`;
 }
 function renderSeasonList(){const list=seasonRanges().reverse();$('seasonListNotice').textContent=seasonTableAvailable?`${list.length} saison${list.length>1?'s':''} · liste partagée et synchronisée.`:'Pour activer les saisons, exécute le fichier migration_add_seasons.sql dans Supabase > SQL Editor.';$('seasonList').innerHTML=list.length?'<div class="table-wrap"><table><thead><tr><th>Saison</th><th>Début</th><th>Fin</th><th>Duels</th><th>Action</th></tr></thead><tbody>'+list.map(s=>'<tr><td><strong>'+esc(s.name)+'</strong></td><td>'+fdate(s.start_date)+'</td><td>'+(s.end?fdate(dayBefore(s.end)):'En cours')+'</td><td>'+duels.filter(d=>inRange(d,{from:s.start_date,to:s.end})).length+'</td><td><button type="button" class="small danger" data-delete-season="'+s.id+'">Supprimer</button></td></tr>').join('')+'</tbody></table></div>':empty('Aucune saison. Ajoute la première avec le formulaire ci-dessus, par exemple à la date de la dernière banlist.');$('seasonList').querySelectorAll('[data-delete-season]').forEach(button=>button.addEventListener('click',()=>deleteSeason(Number(button.dataset.deleteSeason))))}
+function renderSeasonRecap(){
+ const list=seasonRanges().reverse();$('recapSeason').hidden=!list.length;
+ if(!list.length){$('seasonRecap').innerHTML=empty('Le récap apparaîtra une fois la première saison créée.');return}
+ // Par défaut, la saison la plus récente déjà commencée (une saison peut être créée à l'avance).
+ if(!list.some(s=>s.id===recapSeason))recapSeason=(list.find(s=>s.start_date<=today())||list[0]).id;
+ $('recapSeason').innerHTML=list.map(s=>`<option value="${s.id}" ${s.id===recapSeason?'selected':''}>${esc(s.name)}${s.start_date>today()?' (à venir)':s.end?'':' (en cours)'}</option>`).join('');
+ const s=list.find(x=>x.id===recapSeason),games=duels.filter(d=>inRange(d,{from:s.start_date,to:s.end})).sort((a,b)=>a.duel_date.localeCompare(b.duel_date)||a.id-b.id);
+ if(!games.length){$('seasonRecap').innerHTML=empty('Aucun duel joué pendant la saison '+esc(s.name)+'.');return}
+ const card=(caption,name,sub,num)=>'<div class="stat"><div class="caption">'+caption+'</div><div class="name" style="margin-top:8px">'+name+'</div><div class="sub">'+sub+'</div><div class="num" style="font-size:22px">'+num+'</div></div>';
+ const plural=(n,w)=>n+' '+w+(n>1?'s':''),none=caption=>card(caption,'—','Pas assez de données','—');
+ const {ratings,history}=eloRatings(games);
+ const people=players.map(p=>{const mine=games.filter(d=>d.winner_id===p.id||d.loser_id===p.id),wins=mine.filter(d=>d.winner_id===p.id).length;return {...p,played:mine.length,wins,losses:mine.length-wins,elo:ratings[p.id]??ELO_START}}).filter(p=>p.played);
+ const champion=[...people].sort((a,b)=>b.elo-a.elo||b.played-a.played)[0],active=[...people].sort((a,b)=>b.played-a.played||b.wins-a.wins)[0];
+ // Plus longue série de victoires consécutives d'un joueur, dans l'ordre chronologique des duels de la saison.
+ const run={};let streak=null;
+ games.forEach(d=>{const r=run[d.winner_id]?.len?run[d.winner_id]:(run[d.winner_id]={len:0,from:d.duel_date});r.len++;r.to=d.duel_date;run[d.loser_id]={len:0};if(!streak||r.len>streak.len)streak={id:d.winner_id,...r}});
+ // Plus gros exploit : le duel qui a rapporté le plus de points Elo, donc la victoire la plus inattendue.
+ const upset=[...history].sort((a,b)=>b.delta-a.delta)[0];
+ const decks=deckRows(games),popular=[...decks].sort((a,b)=>b.played-a.played||pct(b.wins,b.played)-pct(a.wins,a.played))[0],best=decks.find(r=>r.played>=3);
+ const pairs={};games.forEach(d=>{const [a,b]=[d.winner_id,d.loser_id].sort((x,y)=>x-y),r=pairs[a+'|'+b]||(pairs[a+'|'+b]={a,b,played:0,wa:0});r.played++;if(d.winner_id===a)r.wa++});
+ const rivalry=Object.values(pairs).sort((x,y)=>y.played-x.played||Math.abs(x.played-2*x.wa)-Math.abs(y.played-2*y.wa))[0];
+ $('seasonRecap').innerHTML='<div class="stats">'
+  +card('Duels joués',esc(s.name),s.end?'du '+fdate(s.start_date)+' au '+fdate(dayBefore(s.end)):'en cours depuis le '+fdate(s.start_date),games.length)
+  +card('👑 Champion Elo',esc(champion.name),champion.wins+' V · '+champion.losses+' D',champion.elo)
+  +card('🔥 Plus longue série',esc(pname(streak.id)),streak.len+' victoire'+(streak.len>1?'s':'')+' d’affilée · '+(streak.from===streak.to?'le '+fdate(streak.from):'du '+fdate(streak.from)+' au '+fdate(streak.to)),streak.len+' V')
+  +card('🎲 Plus gros exploit',esc(pname(upset.duel.winner_id))+' bat '+esc(pname(upset.duel.loser_id)),fdate(upset.duel.duel_date)+' · '+esc(upset.duel.winner_deck)+' contre '+esc(upset.duel.loser_deck),'+'+upset.delta+' Elo')
+  +card('⚔️ Plus grosse rivalité',esc(pname(rivalry.a))+' vs '+esc(pname(rivalry.b)),'Score '+rivalry.wa+' – '+(rivalry.played-rivalry.wa),plural(rivalry.played,'duel'))
+  +card('💪 Plus actif',esc(active.name),active.wins+' V · '+active.losses+' D',plural(active.played,'duel'))
+  +card('🃏 Deck le plus joué',esc(popular.deck),popular.wins+' V · '+popular.losses+' D · '+pct(popular.wins,popular.played)+'% de victoires',popular.played+' fois')
+  +(best?card('🏆 Meilleur deck · min. 3 duels',esc(best.deck),best.wins+' V · '+best.losses+' D',pct(best.wins,best.played)+'%'):none('🏆 Meilleur deck · min. 3 duels'))
+  +'</div>';
+}
 window.deleteSeason=async id=>{const s=seasons.find(x=>x.id===id);if(!s||!confirm('Supprimer la saison « '+s.name+' » ? Les duels ne sont pas supprimés.'))return;const {error}=await db.from('seasons').delete().eq('id',id);if(error){alert('Suppression impossible : '+error.message);return}await refresh()};
 function renderDeckList(){const list=sortDecks(DECKS);$('deckListNotice').textContent=deckTableAvailable?`${list.length} deck${list.length>1?'s':''} disponible${list.length>1?'s':''} · liste partagée et synchronisée.`:'Pour activer l’ajout et la suppression, exécute le fichier migration_add_decks.sql dans Supabase > SQL Editor.';$('deckList').innerHTML=list.length?'<div class="table-wrap"><table><thead><tr><th>Deck ('+list.length+')</th><th>Action</th></tr></thead><tbody>'+list.map(name=>'<tr><td><strong>'+esc(name)+'</strong></td><td><button type="button" class="small danger" data-delete-deck="'+esc(name)+'">Supprimer</button></td></tr>').join('')+'</tbody></table></div>':empty('Aucun deck dans la liste. Ajoute ton premier deck avec le formulaire ci-dessus.');$('deckList').querySelectorAll('[data-delete-deck]').forEach(button=>button.addEventListener('click',()=>deleteDeck(button.dataset.deleteDeck)))}
 window.deleteDeck=async name=>{if(!deckTableAvailable){alert('La liste partagée n’est pas encore activée. Exécute migration_add_decks.sql dans Supabase > SQL Editor.');return}if(!confirm('Supprimer le deck « '+name+' » de la liste ? Les anciens duels resteront dans l’historique.'))return;const {error}=await db.from('decks').delete().eq('name',name);if(error){alert('Suppression impossible : '+error.message);return}await refresh()};
@@ -329,6 +361,7 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{doc
 // La courbe est dessinée à la largeur réelle du panneau : on la redessine si la fenêtre change de taille.
 addEventListener('resize',renderEloChart);
 $('period').addEventListener('change',e=>{period=e.target.value;render()});
+$('recapSeason').addEventListener('change',e=>{recapSeason=Number(e.target.value);renderSeasonRecap()});
 $('duelDate').value=today();
 $('duelForm').addEventListener('submit',async e=>{e.preventDefault();if(!db)return;const winner_id=Number($('winner').value),loser_id=Number($('loser').value);if(winner_id===loser_id){alert('Le vainqueur et le perdant doivent être deux joueurs différents.');return}if(!$('winnerDeck').value||!$('loserDeck').value){alert('Choisissez un deck pour chaque joueur.');return}const payload={winner_id,loser_id,winner_deck:$('winnerDeck').value.trim(),loser_deck:$('loserDeck').value.trim(),duel_date:$('duelDate').value,note:$('note').value.trim()};const order=$('winnerOrder').value,editedDuel=editingId&&duels.find(x=>x.id===editingId);if(order||editedDuel&&'winner_went_first' in editedDuel)payload.winner_went_first=order?order==='first':null;for(const key of ['winner_ydke','loser_ydke']){const v=$(key==='winner_ydke'?'winnerYdke':'loserYdke').value.trim();if(v&&!parseYdke(v)){alert('Le code YDKE du deck '+(key==='winner_ydke'?'vainqueur':'perdant')+' est invalide. Il doit commencer par ydke:// (export depuis EDOPro, Duelingbook, YGOPRODeck…).');return}if(v||editedDuel&&key in editedDuel)payload[key]=v||null}const result=editingId?await db.from('duels').update(payload).eq('id',editingId):await db.from('duels').insert(payload);if(result.error){alert('Enregistrement impossible : '+result.error.message+(result.error.message.includes('ydke')?'\nExécute migration_add_ydke.sql dans Supabase > SQL Editor.':result.error.message.includes('winner_went_first')?'\nExécute migration_add_first_player.sql dans Supabase > SQL Editor.':''));return}editingId=null;$('duelForm').reset();$('ydkeBox').open=false;$('duelDate').value=today();$('duelForm').querySelector('button[type=submit]').textContent='＋ Enregistrer le duel';await refresh();document.querySelector('[data-page="dashboard"]').click()});
 $('playersForm').addEventListener('submit',async e=>{e.preventDefault();if(!db)return;const rows=players.map(p=>({id:p.id,name:$('p'+p.id).value.trim()||`Joueur ${p.id}`}));if(new Set(rows.map(p=>norm(p.name))).size!==rows.length){alert('Chaque joueur doit avoir un nom différent.');return}const {error}=await db.from('players').upsert(rows);if(error){alert('Modification impossible : '+error.message);return}await refresh();alert('Noms enregistrés pour tous les joueurs.')});
