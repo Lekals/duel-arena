@@ -50,6 +50,7 @@ function selectPlayers(selected){return players.map(p=>`<option value="${p.id}" 
 function setStatus(message,kind=''){ $('connection').textContent=message;$('connection').className='status '+kind }
 function render(){
  const ss=stats();
+ renderDeckList();
  renderMetaStats();renderDuelists();
  const recent=[...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id).slice(0,5);$('recent').innerHTML=recent.length?duelTable(recent,false):empty('Les derniers résultats apparaîtront ici.');
  $('winner').innerHTML=selectPlayers();$('loser').innerHTML=selectPlayers(players[1]?.id);
