@@ -37,7 +37,12 @@ Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exéc
 
 Pour une nouvelle installation, le fichier `schema.sql` inclut déjà ces colonnes.
 
-## 7. Publier sur Vercel
+## 7. Garder les tirages au sort (mise à jour existante)
+Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exécutez le contenu de `migration_add_tosses.sql`. Cela crée la table partagée des tirages : chaque pile ou face et chaque lancer de dés fait dans l'onglet **🎮 Jouer un duel** est enregistré, et le panneau **🍀 Chance aux tirages** de Duelist Overview montre qui gagne le moins de tirages sur la période choisie.
+
+Sans cette migration, les tirages fonctionnent quand même, mais ne sont pas gardés. Pour une nouvelle installation, le fichier `schema.sql` inclut déjà cette table.
+
+## 8. Publier sur Vercel
 Méthode la plus simple :
 1. Créez un dépôt GitHub et ajoutez-y les trois fichiers (`index.html`, `config.js`, `schema.sql`). Vous pouvez aussi publier le dossier sur Vercel Drop si cette option accepte votre export.
 2. Sur https://vercel.com/ connectez votre compte GitHub et importez le dépôt.
@@ -45,7 +50,7 @@ Méthode la plus simple :
 4. Vercel vous donne une adresse publique en `*.vercel.app`. Envoyez ce lien aux 3 autres joueurs.
 5. Après toute modification du code, republiez/redéployez le site.
 
-## 8. Vérifier que tout fonctionne
+## 9. Vérifier que tout fonctionne
 - Ouvrez le lien publié et vérifiez le badge « En ligne ».
 - Renommez les quatre joueurs dans **Joueurs**.
 - Ajoutez un duel, puis ouvrez le même lien sur un autre appareil : le résultat doit apparaître.
