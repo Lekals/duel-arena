@@ -95,10 +95,11 @@ function showDuelistDetail(id){
   return {id:o.id,name:o.name,played:games.length,wins,losses:games.length-wins,rate:pct(wins,games.length)};
  }).filter(x=>x.played);
  const rival=[...matchups].sort((a,b)=>b.played-a.played||b.rate-a.rate)[0];
- const oppressor=[...matchups].sort((a,b)=>a.rate-b.rate||b.played-a.played)[0];
- // Sans aucune défaite, aucun adversaire ne doit être affiché comme « Victime ».
- const hasLoss=played.some(d=>Number(d.loser_id)===selectedDuelist);
- const victim=hasLoss?[...matchups].sort((a,b)=>b.rate-a.rate||b.played-a.played)[0]:null;
+ // Oppresseur : plus faible ratio V/D parmi les adversaires contre lesquels le duelliste a perdu au moins une fois.
+ const oppressor=[...matchups].filter(x=>x.losses>=1).sort((a,b)=>(a.wins/a.losses)-(b.wins/b.losses)||b.played-a.played)[0];
+ // Victime : meilleur ratio V/D parmi les adversaires contre lesquels le duelliste a gagné au moins une fois.
+ // Un adversaire jamais battu par le duelliste a un ratio infini (au moins une victoire, zéro défaite).
+ const victim=[...matchups].filter(x=>x.wins>=1).sort((a,b)=>(b.losses===0?Infinity:b.wins/b.losses)-(a.losses===0?Infinity:a.wins/a.losses)||b.wins-a.wins||b.played-a.played)[0];
  const decks=[];
  played.forEach(d=>{
   const won=Number(d.winner_id)===selectedDuelist;const deck=won?d.winner_deck:d.loser_deck;
@@ -106,9 +107,9 @@ function showDuelistDetail(id){
   r.played++;if(won)r.wins++;else r.losses++;
  });
  const best=decks.filter(x=>x.played>=5).sort((a,b)=>pct(b.wins,b.played)-pct(a.wins,a.played)||b.played-a.played)[0];
- const matchupCard=(label,item)=>'<div class="stat"><div class="caption">'+label+'</div><div class="name" style="margin-top:8px">'+(item?esc(item.name):'—')+'</div><div class="sub">'+(item?item.played+' duels · '+item.wins+' V / '+item.losses+' D':'Pas assez de données')+'</div><div class="num" style="font-size:22px">'+(item?item.rate+'%':'—')+'</div></div>';
+ const matchupCard=(label,item,showRatio=false)=>'<div class="stat"><div class="caption">'+label+'</div><div class="name" style="margin-top:8px">'+(item?esc(item.name):'—')+'</div><div class="sub">'+(item?item.played+' duels · '+item.wins+' V / '+item.losses+' D':'Pas assez de données')+'</div><div class="num" style="font-size:22px">'+(item?(showRatio?(item.losses===0?'∞':(item.wins/item.losses).toFixed(2))+' V/D':item.rate+'%':'—')+'</div></div>';
  $('duelistDetailPanel').hidden=false;$('duelistDetailTitle').textContent='Profil — '+p.name;
- $('duelistDetail').innerHTML='<div class="stats">'+matchupCard('Rival · plus affronté',rival)+matchupCard('Oppresseur · pire ratio',oppressor)+matchupCard('Victime · meilleur ratio',victim)+'<div class="stat"><div class="caption">Meilleur deck · min. 5 duels</div><div class="name" style="margin-top:8px">'+(best?esc(best.deck):'—')+'</div><div class="sub">'+(best?best.wins+' V / '+best.losses+' D · '+best.played+' duels':'Aucun deck avec au moins 5 duels')+'</div><div class="num" style="font-size:22px">'+(best?pct(best.wins,best.played)+'%':'—')+'</div></div></div><h2>Historique des duels de '+esc(p.name)+'</h2>'+(played.length?duelTable([...played].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id),false):empty('Aucun duel joué pour le moment.'));
+ $('duelistDetail').innerHTML='<div class="stats">'+matchupCard('Rival · plus affronté',rival)+matchupCard('Oppresseur · pire ratio V/D',oppressor,true)+matchupCard('Victime · meilleur ratio V/D',victim,true)+'<div class="stat"><div class="caption">Meilleur deck · min. 5 duels</div><div class="name" style="margin-top:8px">'+(best?esc(best.deck):'—')+'</div><div class="sub">'+(best?best.wins+' V / '+best.losses+' D · '+best.played+' duels':'Aucun deck avec au moins 5 duels')+'</div><div class="num" style="font-size:22px">'+(best?pct(best.wins,best.played)+'%':'—')+'</div></div></div><h2>Historique des duels de '+esc(p.name)+'</h2>'+(played.length?duelTable([...played].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id),false):empty('Aucun duel joué pour le moment.'));
 }
 
 function renderDeckList(){const list=sortDecks(DECKS);$('deckListNotice').textContent=deckTableAvailable?`${list.length} deck${list.length>1?'s':''} disponible${list.length>1?'s':''} · liste partagée et synchronisée.`:'Pour activer l’ajout et la suppression, exécute le fichier migration_add_decks.sql dans Supabase > SQL Editor.';$('deckList').innerHTML=list.length?'<div class="table-wrap"><table><thead><tr><th>Deck ('+list.length+')</th><th>Action</th></tr></thead><tbody>'+list.map(name=>'<tr><td><strong>'+esc(name)+'</strong></td><td><button type="button" class="small danger" data-delete-deck="'+esc(name)+'">Supprimer</button></td></tr>').join('')+'</tbody></table></div>':empty('Aucun deck dans la liste. Ajoute ton premier deck avec le formulaire ci-dessus.');$('deckList').querySelectorAll('[data-delete-deck]').forEach(button=>button.addEventListener('click',()=>deleteDeck(button.dataset.deleteDeck)))}
