@@ -17,7 +17,12 @@
 3. Remplacez `VOTRE-CLE-PUBLISHABLE` par la clé publique.
 4. Enregistrez le fichier.
 
-## 3. Publier sur Vercel
+## 3. Activer la liste des decks (mise à jour existante)
+Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exécutez le contenu de `migration_add_decks.sql`. Cela crée la table partagée des decks et charge la liste initiale. Après cela, l’ajout et la suppression des decks depuis le site seront activés.
+
+Pour une nouvelle installation, le fichier `schema.sql` inclut déjà cette table.
+
+## 4. Publier sur Vercel
 Méthode la plus simple :
 1. Créez un dépôt GitHub et ajoutez-y les trois fichiers (`index.html`, `config.js`, `schema.sql`). Vous pouvez aussi publier le dossier sur Vercel Drop si cette option accepte votre export.
 2. Sur https://vercel.com/ connectez votre compte GitHub et importez le dépôt.
@@ -25,7 +30,7 @@ Méthode la plus simple :
 4. Vercel vous donne une adresse publique en `*.vercel.app`. Envoyez ce lien aux 3 autres joueurs.
 5. Après toute modification du code, republiez/redéployez le site.
 
-## 4. Vérifier que tout fonctionne
+## 5. Vérifier que tout fonctionne
 - Ouvrez le lien publié et vérifiez le badge « En ligne ».
 - Renommez les quatre joueurs dans **Joueurs**.
 - Ajoutez un duel, puis ouvrez le même lien sur un autre appareil : le résultat doit apparaître.
