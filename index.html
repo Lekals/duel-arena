@@ -21,10 +21,11 @@ footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 <main>
 <div class="section-head" style="margin-bottom:14px"><span id="connection" class="status">Connexion en cours…</span><span class="hint">Données partagées en ligne</span></div>
 
-<div class="tabs"><button class="tab active" data-page="dashboard">🏆 Classement</button><button class="tab" data-page="add">⚔️ Saisir un duel</button><button class="tab" data-page="decks">🃏 Stats par deck</button><button class="tab" data-page="history">📜 Historique</button><button class="tab" data-page="settings">⚙️ Joueurs</button></div>
-<section class="page active" id="dashboard"><div class="stats" id="summary"></div><div class="panel"><div class="section-head"><h2>🏆 Classement des duellistes</h2><span class="hint">Winrate = victoires / duels joués</span></div><div id="ranking"></div></div><div class="panel"><h2>⚡ Derniers duels</h2><div id="recent"></div></div></section>
+<div class="tabs"><button class="tab active" data-page="dashboard">🏆 Meta Stats</button><button class="tab" data-page="duelists">👤 Duelist Overview</button><button class="tab" data-page="add">⚔️ Saisir un duel</button><button class="tab" data-page="decks">🃏 Stats par deck</button><button class="tab" data-page="history">📜 Historique</button><button class="tab" data-page="settings">⚙️ Joueurs</button></div>
+<section class="page active" id="dashboard"><div class="panel"><div class="section-head"><h2>🏆 Meta Stats — meilleurs decks</h2><span class="hint">Clique sur un deck pour consulter ses duels</span></div><div id="metaStats"></div></div><div class="panel" id="metaHistoryPanel" hidden><div class="section-head"><h2 id="metaHistoryTitle">Historique du deck</h2><button class="small" onclick="clearMetaSelection()">Fermer</button></div><div id="metaHistory"></div></div><div class="panel"><h2>⚡ Derniers duels</h2><div id="recent"></div></div></section>
+<section class="page" id="duelists"><div class="panel"><div class="section-head"><h2>👤 Duelist Overview</h2><span class="hint">Clique sur un duelliste pour voir ses rivalités et son meilleur deck</span></div><div id="duelistList"></div></div><div class="panel" id="duelistDetailPanel" hidden><h2 id="duelistDetailTitle">Profil du duelliste</h2><div id="duelistDetail"></div></div></section>
 <section class="page" id="add"><div class="panel"><h2>⚔️ Enregistrer un duel</h2><form id="duelForm"><div class="grid"><div class="field"><label for="winner">Vainqueur</label><select id="winner" required></select></div><div class="field"><label for="loser">Perdant</label><select id="loser" required></select></div><div class="field"><label for="winnerDeck">Deck du vainqueur</label><select id="winnerDeck" required></select></div><div class="field"><label for="loserDeck">Deck du perdant</label><select id="loserDeck" required></select></div><div class="field"><label for="duelDate">Date du duel</label><input id="duelDate" type="date" required></div><div class="field"><label for="note">Note (facultatif)</label><input id="note" placeholder="Ex. match amical…" maxlength="120"></div></div><div class="actions"><button class="primary" type="submit">＋ Enregistrer le duel</button><button type="reset">Effacer le formulaire</button></div><p class="hint">Le résultat est enregistré dans la base commune et visible par les autres joueurs.</p></form></div></section>
-<section class="page" id="decks"><div class="panel"><h2>🃏 Performance par deck</h2><p class="hint">Les noms sont regroupés sans tenir compte des majuscules/minuscules.</p><div class="grid"><div class="field"><label for="deckPlayer">Joueur</label><select id="deckPlayer"><option value="all">Tous les joueurs</option></select></div><div class="field"><label for="deckFilter">Filtrer un deck</label><input id="deckFilter" placeholder="Ex. Orcust, Sky Striker…"></div></div><div id="deckStats" style="margin-top:16px"></div></div></section>
+<section class="page" id="decks"><div class="panel"><h2>🃏 Stats par deck</h2><p class="hint">Les noms sont regroupés sans tenir compte des majuscules/minuscules.</p><div class="grid"><div class="field"><label for="deckPlayer">Joueur</label><select id="deckPlayer"><option value="all">Tous les joueurs</option></select></div><div class="field"><label for="deckFilter">Filtrer un deck</label><input id="deckFilter" placeholder="Ex. Orcust, Sky Striker…"></div></div><div id="deckStats" style="margin-top:16px"></div></div></section>
 <section class="page" id="history"><div class="panel"><h2>📜 Historique des duels</h2><div id="historyTable"></div></div></section>
 <section class="page" id="settings"><div class="panel"><h2>⚙️ Gestion des joueurs</h2><p class="hint">Les noms sont partagés avec tous les visiteurs.</p><form id="playersForm"><div class="grid" id="playerInputs"></div><div class="actions"><button class="primary" type="submit">Enregistrer les noms</button></div></form><hr style="border:0;border-top:1px solid #303d5f;margin:22px 0"><h2>＋ Ajouter un joueur</h2><form id="addPlayerForm"><div class="grid"><div class="field"><label for="newPlayerName">Nom du joueur</label><input id="newPlayerName" maxlength="35" placeholder="Ex. Alex" required></div></div><div class="actions"><button class="primary" type="submit">Ajouter le joueur</button></div></form></div></section>
 </main><footer>DUEL ARENA · Ligue entre amis · Synchronisé avec Supabase</footer>
@@ -34,7 +35,7 @@ footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 const $=id=>document.getElementById(id);
 const DECKS=['Trains','Sky Striker','Branded','Branded/Dracotail','Blue-Eyes','Blue-Eyes/Dracotail','Blitzclique','Sacred Beast','Blitzclique/Ryzel','Lunalight','Orcust','VS/K9'];
 const configured=window.DUEL_ARENA_CONFIG&&window.DUEL_ARENA_CONFIG.url&&!window.DUEL_ARENA_CONFIG.url.includes('VOTRE-PROJET')&&window.DUEL_ARENA_CONFIG.anonKey&&!window.DUEL_ARENA_CONFIG.anonKey.includes('VOTRE-CLE');
-let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null;
+let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null,selectedMetaDeck=null,selectedDuelist=null;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function norm(s){return String(s||'').trim().toLocaleLowerCase('fr')}
 function pct(w,p){return p?Math.round(w/p*100):0}
@@ -45,9 +46,8 @@ function stats(){return players.map(p=>{const matches=duels.filter(d=>d.winner_i
 function selectPlayers(selected){return players.map(p=>`<option value="${p.id}" ${String(p.id)===String(selected)?'selected':''}>${esc(p.name)}</option>`).join('')}
 function setStatus(message,kind=''){ $('connection').textContent=message;$('connection').className='status '+kind }
 function render(){
- const ss=stats();$('summary').innerHTML=[[duels.length,'Duels enregistrés'],[new Set(duels.flatMap(d=>[d.winner_deck,d.loser_deck]).map(norm)).size,'Decks utilisés']].map(([n,l])=>`<div class="stat"><div class="num">${n}</div><div class="caption">${l}</div></div>`).join('');
- const sorted=[...ss].sort((a,b)=>b.rate-a.rate||b.wins-a.wins||a.losses-b.losses);
- $('ranking').innerHTML=duels.length?`<div class="player-grid">${sorted.map((s,i)=>`<div class="player-card"><div class="avatar">${i===0?'♛':i+1}</div><div><div class="name">${esc(s.name)}</div><div class="sub">${s.wins} V · ${s.losses} D · ${s.played} duel${s.played!==1?'s':''}</div><div class="bar" style="width:min(190px,45vw)"><span style="width:${s.rate}%"></span></div></div><div class="rate">${s.rate}%</div></div>`).join('')}</div>`:empty('Aucun duel enregistré. Saisissez votre premier duel !');
+ const ss=stats();
+ renderMetaStats();renderDuelists();
  const recent=[...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id).slice(0,5);$('recent').innerHTML=recent.length?duelTable(recent,false):empty('Les derniers résultats apparaîtront ici.');
  $('winner').innerHTML=selectPlayers();$('loser').innerHTML=selectPlayers(players[1]?.id);
  const deckOptions=DECKS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
@@ -57,8 +57,56 @@ function render(){
 
  $('historyTable').innerHTML=duels.length?duelTable([...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id),true):empty('Aucun duel dans l’historique.');
  renderDecks();
+ if(selectedMetaDeck)showMetaHistory(selectedMetaDeck); if(selectedDuelist!==null)showDuelistDetail(selectedDuelist);
 }
 function duelTable(list,actions){return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Vainqueur</th><th>Deck gagnant</th><th>Perdant</th><th>Deck perdant</th>${actions?'<th>Actions</th>':''}</tr></thead><tbody>${list.map(d=>`<tr><td>${esc(d.duel_date)}</td><td class="result-win">🏆 ${esc(pname(d.winner_id))}</td><td>${esc(d.winner_deck)}</td><td class="result-loss">${esc(pname(d.loser_id))}</td><td>${esc(d.loser_deck)}</td>${actions?`<td><button class="small" onclick="editDuel(${d.id})">Modifier</button> <button class="small danger" onclick="deleteDuel(${d.id})">Supprimer</button></td>`:''}</tr>${d.note?`<tr><td colspan="${actions?6:5}" style="color:var(--muted);padding-top:0">↳ ${esc(d.note)}</td></tr>`:''}`).join('')}</tbody></table></div>`}
+
+function deckRows(){
+ const rows=[];
+ duels.forEach(d=>[[d.winner_deck,true],[d.loser_deck,false]].forEach(([deck,won])=>{
+  const key=norm(deck);let r=rows.find(x=>norm(x.deck)===key);
+  if(!r)rows.push(r={deck:String(deck||'').trim(),played:0,wins:0,losses:0});
+  r.played++;if(won)r.wins++;else r.losses++;
+ }));
+ return rows.sort((a,b)=>pct(b.wins,b.played)-pct(a.wins,a.played)||b.played-a.played||a.deck.localeCompare(b.deck,'fr'));
+}
+function renderMetaStats(){
+ const rows=deckRows();
+ $('metaStats').innerHTML=rows.length?'<div class="table-wrap"><table><thead><tr><th>Deck</th><th>Victoires</th><th>Défaites</th><th>Utilisations</th><th>Winrate</th></tr></thead><tbody>'+rows.map(r=>'<tr class="clickable-row" style="cursor:pointer" onclick="showMetaHistory('+JSON.stringify(r.deck).replace(/"/g,'&quot;')+')"><td><strong>'+esc(r.deck)+'</strong></td><td class="result-win">'+r.wins+'</td><td class="result-loss">'+r.losses+'</td><td>'+r.played+'</td><td><strong>'+pct(r.wins,r.played)+'%</strong><div class="bar"><span style="width:'+pct(r.wins,r.played)+'%"></span></div></td></tr>').join('')+'</tbody></table></div>':empty('Aucun duel enregistré pour calculer le meta.');
+}
+window.showMetaHistory=deck=>{
+ selectedMetaDeck=deck;$('metaHistoryPanel').hidden=false;$('metaHistoryTitle').textContent='Historique — '+deck;
+ const list=duels.filter(d=>norm(d.winner_deck)===norm(deck)||norm(d.loser_deck)===norm(deck)).sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id);
+ $('metaHistory').innerHTML=list.length?duelTable(list,false):empty('Aucun duel trouvé pour ce deck.');
+};
+window.clearMetaSelection=()=>{selectedMetaDeck=null;$('metaHistoryPanel').hidden=true};
+function renderDuelists(){
+ const ss=stats().sort((a,b)=>b.rate-a.rate||b.wins-a.wins);
+ $('duelistList').innerHTML=ss.length?'<div class="player-grid">'+ss.map(s=>'<button class="player-card" style="text-align:left;width:100%" onclick="showDuelistDetail('+s.id+')"><div class="avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div><div class="name">'+esc(s.name)+'</div><div class="sub">'+s.wins+' V · '+s.losses+' D · '+s.played+' duels</div><div class="bar" style="width:min(190px,45vw)"><span style="width:'+s.rate+'%"></span></div></div><div class="rate">'+s.rate+'%</div></button>').join('')+'</div>':empty('Aucun duelliste enregistré.');
+}
+function showDuelistDetail(id){
+ selectedDuelist=Number(id);const p=players.find(x=>Number(x.id)===selectedDuelist);if(!p)return;
+ const played=duels.filter(d=>Number(d.winner_id)===selectedDuelist||Number(d.loser_id)===selectedDuelist);
+ const matchups=players.filter(x=>Number(x.id)!==selectedDuelist).map(o=>{
+  const games=played.filter(d=>Number(d.winner_id)===selectedDuelist&&Number(d.loser_id)===Number(o.id)||Number(d.loser_id)===selectedDuelist&&Number(d.winner_id)===Number(o.id));
+  const wins=games.filter(d=>Number(d.winner_id)===selectedDuelist).length;
+  return {id:o.id,name:o.name,played:games.length,wins,losses:games.length-wins,rate:pct(wins,games.length)};
+ }).filter(x=>x.played);
+ const rival=[...matchups].sort((a,b)=>b.played-a.played||b.rate-a.rate)[0];
+ const oppressor=[...matchups].sort((a,b)=>a.rate-b.rate||b.played-a.played)[0];
+ const victim=[...matchups].sort((a,b)=>b.rate-a.rate||b.played-a.played)[0];
+ const decks=[];
+ played.forEach(d=>{
+  const won=Number(d.winner_id)===selectedDuelist;const deck=won?d.winner_deck:d.loser_deck;
+  let r=decks.find(x=>norm(x.deck)===norm(deck));if(!r)decks.push(r={deck,played:0,wins:0,losses:0});
+  r.played++;if(won)r.wins++;else r.losses++;
+ });
+ const best=decks.filter(x=>x.played>=5).sort((a,b)=>pct(b.wins,b.played)-pct(a.wins,a.played)||b.played-a.played)[0];
+ const matchupCard=(label,item)=>'<div class="stat"><div class="caption">'+label+'</div><div class="name" style="margin-top:8px">'+(item?esc(item.name):'—')+'</div><div class="sub">'+(item?item.played+' duels · '+item.wins+' V / '+item.losses+' D':'Pas assez de données')+'</div><div class="num" style="font-size:22px">'+(item?item.rate+'%':'—')+'</div></div>';
+ $('duelistDetailPanel').hidden=false;$('duelistDetailTitle').textContent='Profil — '+p.name;
+ $('duelistDetail').innerHTML='<div class="stats">'+matchupCard('Rival · plus affronté',rival)+matchupCard('Oppresseur · pire ratio',oppressor)+matchupCard('Victime · meilleur ratio',victim)+'<div class="stat"><div class="caption">Meilleur deck · min. 5 duels</div><div class="name" style="margin-top:8px">'+(best?esc(best.deck):'—')+'</div><div class="sub">'+(best?best.wins+' V / '+best.losses+' D · '+best.played+' duels':'Aucun deck avec au moins 5 duels')+'</div><div class="num" style="font-size:22px">'+(best?pct(best.wins,best.played)+'%':'—')+'</div></div></div><h2>Historique des duels de '+esc(p.name)+'</h2>'+(played.length?duelTable([...played].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id),false):empty('Aucun duel joué pour le moment.'));
+}
+
 function renderDecks(){const player=$('deckPlayer').value||'all',filter=norm($('deckFilter').value),rows=[];
  duels.forEach(d=>[[d.winner_deck,d.winner_id,true],[d.loser_deck,d.loser_id,false]].forEach(([deck,pid,won])=>{if(player!=='all'&&String(pid)!==player)return;if(filter&&!norm(deck).includes(filter))return;let r=rows.find(x=>norm(x.deck)===norm(deck));if(!r)rows.push(r={deck:String(deck).trim(),played:0,wins:0,losses:0,players:new Set()});r.played++;r.wins+=won?1:0;r.losses+=won?0:1;r.players.add(pid)}));
  rows.sort((a,b)=>pct(b.wins,b.played)-pct(a.wins,a.played)||b.played-a.played||a.deck.localeCompare(b.deck,'fr'));
