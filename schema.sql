@@ -34,6 +34,7 @@ create table if not exists public.duels (
   note text not null default '' check (char_length(note) <= 120),
   winner_ydke text check (char_length(winner_ydke) <= 1000),
   loser_ydke text check (char_length(loser_ydke) <= 1000),
+  winner_went_first boolean,
   created_at timestamptz not null default now(),
   constraint different_players check (winner_id <> loser_id)
 );
