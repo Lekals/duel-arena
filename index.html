@@ -12,6 +12,7 @@ main{max-width:1120px;margin:0 auto;padding:22px 16px 60px}.tabs{display:flex;ga
 input,select{width:100%;padding:11px 12px;border-radius:8px;border:1px solid #3a4868;background:#0b1122;color:var(--text);font:inherit;min-width:0}input:focus,select:focus{outline:2px solid #65d9ff88;border-color:var(--cyan)}.field{min-width:0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.hint{color:var(--muted);font-size:13px;margin:8px 0 0}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}.stat{padding:15px;border:1px solid #34415f;border-radius:12px;background:#121b31}.num{font-size:27px;font-weight:900;color:var(--gold)}.caption{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .player-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.player-card{border:1px solid #354362;border-radius:12px;padding:14px;background:#10182b;display:flex;gap:12px;align-items:center}.avatar{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(145deg,#263b67,#11192f);border:1px solid var(--gold);color:var(--gold);font-weight:950;font-size:18px;flex-shrink:0}.name{font-weight:850;font-size:16px}.sub{font-size:12px;color:var(--muted)}.rate{margin-left:auto;text-align:right;font-size:21px;font-weight:900;color:var(--green)}
 .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #2a3652;white-space:nowrap}th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}td strong{color:var(--gold)}.result-win{color:var(--green);font-weight:800}.result-loss{color:var(--red);font-weight:800}.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed #3a4868;border-radius:10px}.bar{height:6px;background:#26314b;border-radius:8px;overflow:hidden;margin-top:6px}.bar span{display:block;height:100%;background:linear-gradient(90deg,#58d5ff,#73efb2);border-radius:8px}.section-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.status{font-size:12px;border-radius:20px;padding:5px 10px;background:#17263a;color:var(--muted)}.status.ok{color:var(--green)}.status.bad{color:var(--red)}.notice{padding:12px;border:1px solid #6a5428;background:#2a2316;color:#f7dda0;border-radius:10px;margin-bottom:16px;font-size:13px}
+.matrix th,.matrix td{text-align:center}.matrix tbody th,.matrix thead th:first-child{position:sticky;left:0;background:#121a2f;text-align:left}.matrix tbody th{font-size:13px;color:var(--gold);text-transform:none;letter-spacing:0}.matrix td{cursor:pointer;border-left:1px solid #2a3652}.matrix td.cell-empty{cursor:default;color:#4a5678}.matrix .wr{font-weight:850}
 footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 @media(max-width:650px){.grid,.grid.four,.player-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:14px}}
 </style>
@@ -22,7 +23,7 @@ footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 <div class="section-head" style="margin-bottom:14px"><span id="connection" class="status">Connexion en cours…</span><span class="hint">Données partagées en ligne</span></div>
 
 <div class="tabs"><button class="tab active" data-page="dashboard">🏆 Meta Stats</button><button class="tab" data-page="duelists">👤 Duelist Overview</button><button class="tab" data-page="add">⚔️ Saisir un duel</button><button class="tab" data-page="history">📜 Historique</button><button class="tab" data-page="decks">🃏 Liste des decks</button><button class="tab" data-page="settings">⚙️ Joueurs</button></div>
-<section class="page active" id="dashboard"><div class="panel"><div class="section-head"><h2>🏆 Meta Stats — meilleurs decks</h2><span class="hint">Clique sur un deck pour consulter ses duels</span></div><div id="metaStats"></div></div><div class="panel" id="metaHistoryPanel" hidden><div class="section-head"><h2 id="metaHistoryTitle">Historique du deck</h2><button class="small" onclick="clearMetaSelection()">Fermer</button></div><div id="metaHistory"></div></div><div class="panel"><h2>⚡ Derniers duels</h2><div id="recent"></div></div></section>
+<section class="page active" id="dashboard"><div class="panel"><div class="section-head"><h2>🏆 Meta Stats — meilleurs decks</h2><span class="hint">Clique sur un deck pour consulter ses duels</span></div><div id="metaStats"></div></div><div class="panel" id="metaHistoryPanel" hidden><div class="section-head"><h2 id="metaHistoryTitle">Historique du deck</h2><button class="small" onclick="clearMetaSelection()">Fermer</button></div><div id="metaHistory"></div></div><div class="panel"><div class="section-head"><h2>🧮 Matrice deck contre deck</h2><span class="hint">Winrate du deck en ligne contre le deck en colonne · clique sur une case pour voir les duels</span></div><div id="matchupMatrix"></div></div><div class="panel" id="matchupHistoryPanel" hidden><div class="section-head"><h2 id="matchupHistoryTitle">Historique du matchup</h2><button class="small" onclick="clearMatchupSelection()">Fermer</button></div><div id="matchupHistory"></div></div><div class="panel"><h2>⚡ Derniers duels</h2><div id="recent"></div></div></section>
 <section class="page" id="duelists"><div class="panel"><div class="section-head"><h2>👤 Duelist Overview</h2><span class="hint">Clique sur un duelliste pour voir ses rivalités et son meilleur deck</span></div><div id="duelistList"></div></div><div class="panel" id="duelistDetailPanel" hidden><h2 id="duelistDetailTitle">Profil du duelliste</h2><div id="duelistDetail"></div></div></section>
 <section class="page" id="add"><div class="panel"><h2>⚔️ Enregistrer un duel</h2><form id="duelForm"><div class="grid"><div class="field"><label for="winner">Vainqueur</label><select id="winner" required></select></div><div class="field"><label for="loser">Perdant</label><select id="loser" required></select></div><div class="field"><label for="winnerDeck">Deck du vainqueur</label><select id="winnerDeck" required></select></div><div class="field"><label for="loserDeck">Deck du perdant</label><select id="loserDeck" required></select></div><div class="field"><label for="duelDate">Date du duel</label><input id="duelDate" type="date" required></div><div class="field"><label for="note">Note (facultatif)</label><input id="note" placeholder="Ex. match amical…" maxlength="120"></div><div class="field"><label for="winnerOrder">Le vainqueur a joué (facultatif)</label><select id="winnerOrder"><option value="">Non renseigné</option><option value="first">En premier</option><option value="second">En second</option></select></div></div><div class="actions"><button class="primary" type="submit">＋ Enregistrer le duel</button><button type="reset">Effacer le formulaire</button></div><p class="hint">Le résultat est enregistré dans la base commune et visible par les autres joueurs.</p></form></div></section>
 
@@ -37,7 +38,7 @@ const $=id=>document.getElementById(id);
 const DEFAULT_DECKS=['Trains','Sky Striker','Branded','Branded/Dracotail','Blue-Eyes','Blue-Eyes/Dracotail','Blitzclique','Sacred Beast','Blitzclique/Ryzel','Lunalight','Orcust','VS/K9'];
 let DECKS=sortDecks(DEFAULT_DECKS),deckTableAvailable=false;
 const configured=window.DUEL_ARENA_CONFIG&&window.DUEL_ARENA_CONFIG.url&&!window.DUEL_ARENA_CONFIG.url.includes('VOTRE-PROJET')&&window.DUEL_ARENA_CONFIG.anonKey&&!window.DUEL_ARENA_CONFIG.anonKey.includes('VOTRE-CLE');
-let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null,selectedMetaDeck=null,selectedDuelist=null;
+let db=null, players=[{id:1,name:'Joueur 1'},{id:2,name:'Joueur 2'},{id:3,name:'Joueur 3'},{id:4,name:'Joueur 4'}],duels=[],editingId=null,selectedMetaDeck=null,selectedMatchup=null,selectedDuelist=null;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr')}
 function sortDecks(list){return [...list].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}))}
@@ -51,7 +52,7 @@ function setStatus(message,kind=''){ $('connection').textContent=message;$('conn
 function render(){
  const ss=stats();
  renderDeckList();
- renderMetaStats();renderDuelists();
+ renderMetaStats();renderMatchups();renderDuelists();
  const recent=[...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id).slice(0,5);$('recent').innerHTML=recent.length?duelTable(recent,false):empty('Les derniers résultats apparaîtront ici.');
  $('winner').innerHTML=selectPlayers();$('loser').innerHTML=selectPlayers(players[1]?.id);
  const deckOptions=DECKS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
@@ -59,7 +60,7 @@ function render(){
  $('playerInputs').innerHTML=players.map(p=>`<div class="field"><label for="p${p.id}">Joueur ${p.id}</label><input id="p${p.id}" value="${esc(p.name)}" maxlength="35" required></div>`).join('');
 
  $('historyTable').innerHTML=duels.length?duelTable([...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id),true):empty('Aucun duel dans l’historique.');
- if(selectedMetaDeck)showMetaHistory(selectedMetaDeck); if(selectedDuelist!==null)showDuelistDetail(selectedDuelist);
+ if(selectedMetaDeck)showMetaHistory(selectedMetaDeck); if(selectedMatchup)showMatchupHistory(...selectedMatchup); if(selectedDuelist!==null)showDuelistDetail(selectedDuelist);
 }
 function duelTable(list,actions){return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Vainqueur</th><th>Deck gagnant</th><th>Perdant</th><th>Deck perdant</th><th>1er joueur</th>${actions?'<th>Actions</th>':''}</tr></thead><tbody>${list.map(d=>`<tr><td>${esc(d.duel_date)}</td><td class="result-win">🏆 ${esc(pname(d.winner_id))}</td><td>${esc(d.winner_deck)}</td><td class="result-loss">${esc(pname(d.loser_id))}</td><td>${esc(d.loser_deck)}</td><td>${d.winner_went_first==null?'—':esc(pname(d.winner_went_first?d.winner_id:d.loser_id))}</td>${actions?`<td><button class="small" onclick="editDuel(${d.id})">Modifier</button> <button class="small danger" onclick="deleteDuel(${d.id})">Supprimer</button></td>`:''}</tr>${d.note?`<tr><td colspan="${actions?7:6}" style="color:var(--muted);padding-top:0">↳ ${esc(d.note)}</td></tr>`:''}`).join('')}</tbody></table></div>`}
 
@@ -85,6 +86,26 @@ window.showMetaHistory=deck=>{
  $('metaHistory').innerHTML=list.length?duelTable(list,false):empty('Aucun duel trouvé pour ce deck.');
 };
 window.clearMetaSelection=()=>{selectedMetaDeck=null;$('metaHistoryPanel').hidden=true};
+function renderMatchups(){
+ const decks=sortDecks(deckRows().map(r=>r.deck)),cells={};
+ const add=(key,won)=>{const c=cells[key]||(cells[key]={played:0,wins:0});c.played++;if(won)c.wins++};
+ // Chaque duel compte une victoire pour le deck gagnant et une défaite pour le perdant ; un miroir n'est compté qu'une fois.
+ duels.forEach(d=>{const w=norm(d.winner_deck),l=norm(d.loser_deck);add(w+'|'+l,true);if(w!==l)add(l+'|'+w,false)});
+ const arg=s=>JSON.stringify(s).replace(/"/g,'&quot;');
+ const cell=(a,b)=>{
+  const c=cells[norm(a)+'|'+norm(b)];if(!c)return '<td class="cell-empty">·</td>';
+  const mirror=norm(a)===norm(b),rate=pct(c.wins,c.played);
+  const title=mirror?a+' en miroir : '+c.played+' duel'+(c.played>1?'s':''):a+' contre '+b+' : '+c.wins+' V / '+(c.played-c.wins)+' D';
+  return '<td title="'+esc(title)+'" style="'+(mirror?'':'background:hsl('+Math.round(rate*1.2)+' 65% 42% / .35)')+'" onclick="showMatchupHistory('+arg(a)+','+arg(b)+')">'+(mirror?'<span class="sub">Miroir</span>':'<span class="wr">'+rate+'%</span>')+'<div class="sub">'+(mirror?c.played:c.wins+'/'+c.played)+'</div></td>';
+ };
+ $('matchupMatrix').innerHTML=decks.length?'<div class="table-wrap"><table class="matrix"><thead><tr><th>Deck ↓ / contre →</th>'+decks.map(d=>'<th>'+esc(d)+'</th>').join('')+'</tr></thead><tbody>'+decks.map(a=>'<tr><th>'+esc(a)+'</th>'+decks.map(b=>cell(a,b)).join('')+'</tr>').join('')+'</tbody></table></div>':empty('Aucun duel enregistré pour calculer les matchups.');
+}
+window.showMatchupHistory=(a,b)=>{
+ selectedMatchup=[a,b];$('matchupHistoryPanel').hidden=false;$('matchupHistoryTitle').textContent=norm(a)===norm(b)?'Historique — '+a+' (miroir)':'Historique — '+a+' contre '+b;
+ const A=norm(a),B=norm(b),list=duels.filter(d=>{const w=norm(d.winner_deck),l=norm(d.loser_deck);return w===A&&l===B||w===B&&l===A}).sort((x,y)=>y.duel_date.localeCompare(x.duel_date)||y.id-x.id);
+ $('matchupHistory').innerHTML=list.length?duelTable(list,false):empty('Aucun duel trouvé pour ce matchup.');
+};
+window.clearMatchupSelection=()=>{selectedMatchup=null;$('matchupHistoryPanel').hidden=true};
 function renderDuelists(){
  const ss=stats().sort((a,b)=>b.rate-a.rate||b.wins-a.wins);
  $('duelistList').innerHTML=ss.length?'<div class="player-grid">'+ss.map(s=>'<button class="player-card" style="text-align:left;width:100%" onclick="showDuelistDetail('+s.id+')"><div class="avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div><div class="name">'+esc(s.name)+'</div><div class="sub">'+s.wins+' V · '+s.losses+' D · '+s.played+' duels</div><div class="bar" style="width:min(190px,45vw)"><span style="width:'+s.rate+'%"></span></div></div><div class="rate">'+s.rate+'%</div></button>').join('')+'</div>':empty('Aucun duelliste enregistré.');
