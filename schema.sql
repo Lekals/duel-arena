@@ -32,6 +32,7 @@ create table if not exists public.duels (
   loser_deck text not null check (char_length(trim(loser_deck)) between 1 and 60),
   duel_date date not null default current_date,
   note text not null default '' check (char_length(note) <= 120),
+  winner_went_first boolean,
   created_at timestamptz not null default now(),
   constraint different_players check (winner_id <> loser_id)
 );
