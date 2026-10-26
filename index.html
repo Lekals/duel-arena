@@ -96,9 +96,7 @@ function showDuelistDetail(id){
  }).filter(x=>x.played);
  const rival=[...matchups].sort((a,b)=>b.played-a.played||b.rate-a.rate)[0];
  const oppressor=[...matchups].sort((a,b)=>a.rate-b.rate||b.played-a.played)[0];
- // Sans aucune défaite, aucun adversaire ne doit être affiché comme « Victime ».
- const hasLoss=played.some(d=>Number(d.loser_id)===selectedDuelist);
- const victim=hasLoss?[...matchups].sort((a,b)=>b.rate-a.rate||b.played-a.played)[0]:null;
+ const victim=[...matchups].sort((a,b)=>b.rate-a.rate||b.played-a.played)[0];
  const decks=[];
  played.forEach(d=>{
   const won=Number(d.winner_id)===selectedDuelist;const deck=won?d.winner_deck:d.loser_deck;
