@@ -24,7 +24,7 @@ footer{text-align:center;color:#7e8aa8;font-size:12px;padding:0 15px 24px}
 
 <div class="tabs"><button class="tab active" data-page="dashboard">🏆 Meta Stats</button><button class="tab" data-page="duelists">👤 Duelist Overview</button><button class="tab" data-page="add">⚔️ Saisir un duel</button><button class="tab" data-page="history">📜 Historique</button><button class="tab" data-page="decks">🃏 Liste des decks</button><button class="tab" data-page="settings">⚙️ Joueurs</button></div>
 <section class="page active" id="dashboard"><div class="panel"><div class="section-head"><h2>🏆 Meta Stats — meilleurs decks</h2><span class="hint">Clique sur un deck pour consulter ses duels</span></div><div id="metaStats"></div></div><div class="panel" id="metaHistoryPanel" hidden><div class="section-head"><h2 id="metaHistoryTitle">Historique du deck</h2><button class="small" onclick="clearMetaSelection()">Fermer</button></div><div id="metaHistory"></div></div><div class="panel"><div class="section-head"><h2>🧮 Matrice deck contre deck</h2><span class="hint">Winrate du deck en ligne contre le deck en colonne · clique sur une case pour voir les duels</span></div><div id="matchupMatrix"></div></div><div class="panel" id="matchupHistoryPanel" hidden><div class="section-head"><h2 id="matchupHistoryTitle">Historique du matchup</h2><button class="small" onclick="clearMatchupSelection()">Fermer</button></div><div id="matchupHistory"></div></div><div class="panel"><h2>⚡ Derniers duels</h2><div id="recent"></div></div></section>
-<section class="page" id="duelists"><div class="panel"><div class="section-head"><h2>👤 Duelist Overview</h2><span class="hint">Clique sur un duelliste pour voir ses rivalités et son meilleur deck</span></div><div id="duelistList"></div></div><div class="panel" id="duelistDetailPanel" hidden><h2 id="duelistDetailTitle">Profil du duelliste</h2><div id="duelistDetail"></div></div></section>
+<section class="page" id="duelists"><div class="panel"><div class="section-head"><h2>📈 Classement Elo</h2><span class="hint">Départ à 1000 · battre un joueur mieux classé rapporte plus de points</span></div><div id="eloRanking"></div></div><div class="panel"><div class="section-head"><h2>👤 Duelist Overview</h2><span class="hint">Clique sur un duelliste pour voir ses rivalités et son meilleur deck</span></div><div id="duelistList"></div></div><div class="panel" id="duelistDetailPanel" hidden><h2 id="duelistDetailTitle">Profil du duelliste</h2><div id="duelistDetail"></div></div></section>
 <section class="page" id="add"><div class="panel"><h2>⚔️ Enregistrer un duel</h2><form id="duelForm"><div class="grid"><div class="field"><label for="winner">Vainqueur</label><select id="winner" required></select></div><div class="field"><label for="loser">Perdant</label><select id="loser" required></select></div><div class="field"><label for="winnerDeck">Deck du vainqueur</label><select id="winnerDeck" required></select></div><div class="field"><label for="loserDeck">Deck du perdant</label><select id="loserDeck" required></select></div><div class="field"><label for="duelDate">Date du duel</label><input id="duelDate" type="date" required></div><div class="field"><label for="note">Note (facultatif)</label><input id="note" placeholder="Ex. match amical…" maxlength="120"></div><div class="field"><label for="winnerOrder">Le vainqueur a joué (facultatif)</label><select id="winnerOrder"><option value="">Non renseigné</option><option value="first">En premier</option><option value="second">En second</option></select></div></div><div class="actions"><button class="primary" type="submit">＋ Enregistrer le duel</button><button type="reset">Effacer le formulaire</button></div><p class="hint">Le résultat est enregistré dans la base commune et visible par les autres joueurs.</p></form></div></section>
 
 <section class="page" id="history"><div class="panel"><h2>📜 Historique des duels</h2><div id="historyTable"></div></div></section>
@@ -52,7 +52,7 @@ function setStatus(message,kind=''){ $('connection').textContent=message;$('conn
 function render(){
  const ss=stats();
  renderDeckList();
- renderMetaStats();renderMatchups();renderDuelists();
+ renderMetaStats();renderMatchups();renderElo();renderDuelists();
  const recent=[...duels].sort((a,b)=>b.duel_date.localeCompare(a.duel_date)||b.id-a.id).slice(0,5);$('recent').innerHTML=recent.length?duelTable(recent,false):empty('Les derniers résultats apparaîtront ici.');
  $('winner').innerHTML=selectPlayers();$('loser').innerHTML=selectPlayers(players[1]?.id);
  const deckOptions=DECKS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
@@ -106,6 +106,22 @@ window.showMatchupHistory=(a,b)=>{
  $('matchupHistory').innerHTML=list.length?duelTable(list,false):empty('Aucun duel trouvé pour ce matchup.');
 };
 window.clearMatchupSelection=()=>{selectedMatchup=null;$('matchupHistoryPanel').hidden=true};
+const ELO_START=1000,ELO_K=32;
+function eloRatings(){
+ const ratings={},last={};players.forEach(p=>ratings[p.id]=ELO_START);
+ [...duels].sort((a,b)=>a.duel_date.localeCompare(b.duel_date)||a.id-b.id).forEach(d=>{
+  const w=ratings[d.winner_id]??ELO_START,l=ratings[d.loser_id]??ELO_START;
+  // Le gain dépend de la probabilité de victoire attendue : battre un joueur mieux classé rapporte plus.
+  const delta=Math.round(ELO_K*(1-1/(1+10**((l-w)/400))));
+  ratings[d.winner_id]=w+delta;ratings[d.loser_id]=l-delta;last[d.winner_id]=delta;last[d.loser_id]=-delta;
+ });
+ return {ratings,last};
+}
+function renderElo(){
+ const {ratings,last}=eloRatings(),rows=stats().map(s=>({...s,elo:ratings[s.id]??ELO_START,last:last[s.id]})).sort((a,b)=>b.elo-a.elo||b.played-a.played);
+ const change=v=>v==null?'—':v>0?'<span class="result-win">+'+v+'</span>':v<0?'<span class="result-loss">−'+(-v)+'</span>':'0';
+ $('eloRanking').innerHTML=rows.length?'<div class="table-wrap"><table><thead><tr><th>#</th><th>Duelliste</th><th>Elo</th><th>Dernier duel</th><th>Bilan</th></tr></thead><tbody>'+rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+esc(r.name)+'</strong></td><td><span class="num" style="font-size:18px">'+r.elo+'</span></td><td>'+change(r.last)+'</td><td>'+r.wins+' V · '+r.losses+' D</td></tr>').join('')+'</tbody></table></div>':empty('Aucun duelliste enregistré.');
+}
 function renderDuelists(){
  const ss=stats().sort((a,b)=>b.rate-a.rate||b.wins-a.wins);
  $('duelistList').innerHTML=ss.length?'<div class="player-grid">'+ss.map(s=>'<button class="player-card" style="text-align:left;width:100%" onclick="showDuelistDetail('+s.id+')"><div class="avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div><div class="name">'+esc(s.name)+'</div><div class="sub">'+s.wins+' V · '+s.losses+' D · '+s.played+' duels</div><div class="bar" style="width:min(190px,45vw)"><span style="width:'+s.rate+'%"></span></div></div><div class="rate">'+s.rate+'%</div></button>').join('')+'</div>':empty('Aucun duelliste enregistré.');
