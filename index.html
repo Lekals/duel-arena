@@ -243,13 +243,13 @@ function renderLockStatus(){const el=$('lpLock');if(!el)return;if(!('wakeLock' i
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepScreenOn()});
 // Safari n'accorde le verrou qu'après une action de l'utilisateur : chaque toucher le redemande s'il a été perdu.
 document.addEventListener('pointerdown',keepScreenOn);
-// Avant d'afficher les LP, on tire au sort qui commence. starter vaut null tant que le tirage n'est pas validé.
+// Avant d'afficher les LP, le gagnant du tirage choisit de jouer en premier ou en second. starter vaut null tant que ce choix n'est pas fait.
 function renderToss(){
  const [a,b]=lp.players,t=lp.toss;
- $('lpBoard').innerHTML=`<div class="panel" style="text-align:center"><h2>🎲 Qui commence ?</h2><p class="hint">Pile : ${esc(pname(a))} · Face : ${esc(pname(b))} · aux dés, le plus haut score commence.</p><div class="actions" style="justify-content:center"><button type="button" id="lpCoin">🪙 Pile ou face</button><button type="button" id="lpDice">🎲 Lancer les dés</button></div><p id="lpTossResult" style="font-size:18px;min-height:1.5em">${t?t.text+(t.starter!=null?` — <strong>${esc(pname(t.starter))}</strong> commence !`:''):''}</p><div class="actions" style="justify-content:center">${t?.starter!=null?'<button type="button" class="primary" id="lpGo">❤️ Afficher les LP</button>':''}<button type="button" class="small danger" id="lpStop">Arrêter</button></div></div>`;
+ $('lpBoard').innerHTML=`<div class="panel" style="text-align:center"><h2>🎲 Qui commence ?</h2><p class="hint">Pile : ${esc(pname(a))} · Face : ${esc(pname(b))} · aux dés, le plus haut score gagne. Le gagnant du tirage choisit de jouer en premier ou en second.</p><div class="actions" style="justify-content:center"><button type="button" id="lpCoin">🪙 Pile ou face</button><button type="button" id="lpDice">🎲 Lancer les dés</button></div><p id="lpTossResult" style="font-size:18px;min-height:1.5em">${t?t.text+(t.winner!=null?` — <strong>${esc(pname(t.winner))}</strong> remporte le tirage et choisit :`:''):''}</p><div class="actions" style="justify-content:center">${t?.winner!=null?'<span id="lpChoice" style="display:contents"><button type="button" class="primary" data-first="1">Jouer en premier</button><button type="button" class="primary" data-first="0">Jouer en second</button></span>':''}<button type="button" class="small danger" id="lpStop">Arrêter</button></div></div>`;
 }
-// Tirage commun à la pièce et aux dés : pick(a,b) renvoie le texte du résultat et le joueur qui commence (null en cas d'égalité).
-function drawStarter(rolling,pick){$('lpCoin').disabled=$('lpDice').disabled=true;$('lpGo')?.remove();$('lpTossResult').textContent=rolling;setTimeout(()=>{if(!lp||lp.starter!==null)return;const [text,starter]=pick(...lp.players);lp.toss={text,starter};saveLp();renderLp()},700)}
+// Tirage commun à la pièce et aux dés : pick(a,b) renvoie le texte du résultat et le gagnant du tirage (null en cas d'égalité).
+function drawToss(rolling,pick){$('lpCoin').disabled=$('lpDice').disabled=true;$('lpChoice')?.remove();$('lpTossResult').textContent=rolling;setTimeout(()=>{if(!lp||lp.starter!==null)return;const [text,winner]=pick(...lp.players);lp.toss={text,winner};saveLp();renderLp()},700)}
 function renderLp(){
  $('lpSetup').hidden=!!lp;$('lpBoard').hidden=!lp;if(!lp)return;
  if(lp.starter===null)return renderToss();
@@ -265,10 +265,10 @@ function changeLp(i,after){after=Math.max(0,Math.round(after));if(after===lp.lp[
 function endLp(){lp=null;saveLp();releaseScreen();renderLp()}
 $('lpStart').addEventListener('click',()=>{const a=Number($('lpP1').value),b=Number($('lpP2').value);if(a===b){alert('Choisissez deux joueurs différents.');return}startLp([a,b])});
 $('lpBoard').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!lp)return;
- if(b.id==='lpCoin')return drawStarter('🪙 La pièce tourne…',(a,b)=>Math.random()<.5?['🪙 Pile',a]:['🪙 Face',b]);
+ if(b.id==='lpCoin')return drawToss('🪙 La pièce tourne…',(a,b)=>Math.random()<.5?['🪙 Pile',a]:['🪙 Face',b]);
  // Chaque joueur lance un dé à 6 faces ; en cas d'égalité on reste sur le tirage et il faut relancer.
- if(b.id==='lpDice')return drawStarter('🎲 Les dés roulent…',(a,b)=>{const d6=()=>1+Math.floor(Math.random()*6),x=d6(),y=d6(),text='🎲 '+esc(pname(a))+' '+x+' · '+esc(pname(b))+' '+y;return x===y?[text+' — égalité, relancez les dés !',null]:[text,x>y?a:b]});
- if(b.id==='lpGo'){lp.starter=lp.toss.starter;saveLp();return renderLp()}
+ if(b.id==='lpDice')return drawToss('🎲 Les dés roulent…',(a,b)=>{const d6=()=>1+Math.floor(Math.random()*6),x=d6(),y=d6(),text='🎲 '+esc(pname(a))+' '+x+' · '+esc(pname(b))+' '+y;return x===y?[text+' — égalité, relancez les dés !',null]:[text,x>y?a:b]});
+ if(b.dataset.first){const w=lp.toss.winner;lp.starter=b.dataset.first==='1'?w:lp.players.find(p=>p!==w);saveLp();return renderLp()}
  if(b.dataset.op){const i=Number(b.dataset.lp),cur=lp.lp[i],op=b.dataset.op;if(op==='half')return changeLp(i,Math.ceil(cur/2));if(op==='sub'||op==='add'){const v=Math.abs(Number($('lpAmt'+i).value));if(!v)return $('lpAmt'+i).focus();return changeLp(i,op==='sub'?cur-v:cur+v)}return changeLp(i,cur+Number(op))}
  if(b.dataset.surrender){const i=Number(b.dataset.surrender);if(confirm(pname(lp.players[i])+' abandonne ?')){lp.winner=1-i;saveLp();renderLp()}return}
  if(b.id==='lpUndo'){const e=lp.log.pop();if(e){lp.lp[e.i]=e.before;lp.winner=lp.lp.indexOf(0)>=0?1-lp.lp.indexOf(0):null;saveLp();renderLp()}return}
