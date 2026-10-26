@@ -27,12 +27,17 @@ Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exéc
 
 Pour une nouvelle installation, le fichier `schema.sql` inclut déjà cette colonne.
 
-## 5. Activer les decklists YDKE (mise à jour existante)
+## 5. Activer les saisons (mise à jour existante)
+Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exécutez le contenu de `migration_add_seasons.sql`. Cela crée la table partagée des saisons, gérée depuis l'onglet **Saisons** (par exemple une saison par banlist). Le sélecteur « Période analysée » de Meta Stats et Duelist Overview propose alors chaque saison en plus de « Tout l'historique », « 30 derniers jours » et « 90 derniers jours ».
+
+Sans cette migration, le filtre par période fonctionne quand même, mais sans les saisons. Pour une nouvelle installation, le fichier `schema.sql` inclut déjà cette table.
+
+## 6. Activer les decklists YDKE (mise à jour existante)
 Si le projet Supabase existe déjà, ouvrez **SQL Editor**, puis copiez et exécutez le contenu de `migration_add_ydke.sql`. Cela ajoute deux colonnes facultatives pour coller le code YDKE du deck du vainqueur et de celui du perdant lors de la saisie d’un duel. Dans l’historique, un bouton 🃏 apparaît à côté des decks renseignés et affiche la liste des cartes (images et noms récupérés depuis YGOPRODeck).
 
 Pour une nouvelle installation, le fichier `schema.sql` inclut déjà ces colonnes.
 
-## 6. Publier sur Vercel
+## 7. Publier sur Vercel
 Méthode la plus simple :
 1. Créez un dépôt GitHub et ajoutez-y les trois fichiers (`index.html`, `config.js`, `schema.sql`). Vous pouvez aussi publier le dossier sur Vercel Drop si cette option accepte votre export.
 2. Sur https://vercel.com/ connectez votre compte GitHub et importez le dépôt.
@@ -40,7 +45,7 @@ Méthode la plus simple :
 4. Vercel vous donne une adresse publique en `*.vercel.app`. Envoyez ce lien aux 3 autres joueurs.
 5. Après toute modification du code, republiez/redéployez le site.
 
-## 7. Vérifier que tout fonctionne
+## 8. Vérifier que tout fonctionne
 - Ouvrez le lien publié et vérifiez le badge « En ligne ».
 - Renommez les quatre joueurs dans **Joueurs**.
 - Ajoutez un duel, puis ouvrez le même lien sur un autre appareil : le résultat doit apparaître.
